@@ -1,31 +1,31 @@
 FROM alpine:3.18
 
 RUN apk add \
-        git \
-        build-base \
         bash \
-        ncurses-dev \
-        perl \
-        tar \
-        findutils \
-        patch \
-        coreutils \
-        gawk \
-        grep \
-        unzip \
+        bsd-compat-headers \
+        build-base \
         bzip2 \
-        wget \
-        python2 \
-        python3 \
+        coreutils \
         curl \
         diffutils \
-        bsd-compat-headers \
-        less \
         diffutils \
-        zlib-dev \
         file \
-        sudo \
+        findutils \
+        gawk \
+        git \
+        grep \
+        less \
+        ncurses-dev \
+        patch \
+        perl \
+        python2 \
+        python3 \
         rsync \
+        sudo \
+        tar \
+        unzip \
+        wget \
+        zlib-dev \
     && \
     addgroup -S user && \
     adduser -D -G user user && \
