@@ -41,9 +41,15 @@ RUN apk add \
         zlib-dev \
     && ln -s /usr/lib/libncurses.so /usr/lib/libtinfo.so
 
-RUN addgroup -S user && \
-    adduser -D -G user user && \
-    echo 'user ALL=NOPASSWD: ALL' > /etc/sudoers.d/user
+RUN addgroup \
+        -g 9999 \
+        -S user \
+    && adduser \
+        -D \
+        -G user \
+        -u 9999 \
+        user \
+    && echo 'user ALL=NOPASSWD: ALL' > /etc/sudoers.d/user
 
 USER user
 WORKDIR /home/user
