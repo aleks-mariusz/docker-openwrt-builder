@@ -1,30 +1,45 @@
 FROM alpine:3.18
 
 RUN apk add \
+        argp-standalone \
+        asciidoc \
         bash \
-        bsd-compat-headers \
-        build-base \
+        bc \
+        binutils \
         bzip2 \
+        cdrkit \
         coreutils \
         curl \
         diffutils \
-        file \
         findutils \
+        flex \
+        fts-dev \
+        g++ \
         gawk \
+        gcc \
+        gettext \
         git \
         grep \
-        less \
+        gzip \
+        intltool \
+        libxslt \
+        linux-headers \
+        make \
+        musl-libintl \
+        musl-obstack-dev \
         ncurses-dev \
+        openssl-dev \
         patch \
         perl \
-        python2 \
-        python3 \
+        python3-dev \
         rsync \
         sudo \
         tar \
         unzip \
+        util-linux \
         wget \
         zlib-dev \
+    && ln -s /usr/lib/libncurses.so /usr/lib/libtinfo.so \
     && \
     addgroup -S user && \
     adduser -D -G user user && \
