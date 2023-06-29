@@ -39,9 +39,9 @@ RUN apk add \
         util-linux \
         wget \
         zlib-dev \
-    && ln -s /usr/lib/libncurses.so /usr/lib/libtinfo.so \
-    && \
-    addgroup -S user && \
+    && ln -s /usr/lib/libncurses.so /usr/lib/libtinfo.so
+
+RUN addgroup -S user && \
     adduser -D -G user user && \
     echo 'user ALL=NOPASSWD: ALL' > /etc/sudoers.d/user
 
