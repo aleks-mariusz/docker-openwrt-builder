@@ -8,7 +8,6 @@ RUN apk add \
         coreutils \
         curl \
         diffutils \
-        diffutils \
         file \
         findutils \
         gawk \
