@@ -56,3 +56,8 @@ WORKDIR /home/user
 
 # set dummy git config
 RUN git config --global user.name "user" && git config --global user.email "user@example.com"
+
+COPY entrypoint.sh /
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["start"]
