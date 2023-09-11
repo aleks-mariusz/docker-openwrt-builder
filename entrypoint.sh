@@ -57,6 +57,10 @@ echo "INFO: patching base config.."
 git add -f .config
 git commit -m'stage config file'
 git am --whitespace=nowarn ../../custom/*.patch
+if [[ $? -ne 0 ]]; then
+  echo "ERROR: custom patches did not apply cleaning.. aborting!"
+  exit 1
+fi
 
 echo "INFO: generating full config.."
 make defconfig
