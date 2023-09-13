@@ -83,6 +83,9 @@ make defconfig
 echo "INFO: downloading necessary files.."
 make download -j4 
 
+echo "INFO: copying any custom files to the build tree.."
+rsync -av --delete ../../livefs/ files/
+
 echo "INFO: building release $BUILD_LATEST.."
 if [[ $1 != "start" ]]; then
   make $*
