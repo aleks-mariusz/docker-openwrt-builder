@@ -2,6 +2,21 @@
 
 cd /home/user/workdir
 
+if [[ $* ]] && [[ $1 != "start" ]]; then
+  echo "INFO: extra params specified, passing them directly to the final step.. "
+  cd openwrt
+  make $*
+
+  if [[ $? -eq 0 ]]; then
+    echo "INFO: build successful! please find image in: $BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
+    cd bin/targets/mvebu/cortexa9
+    ls -l *linksys_wrt32x*sysupgrade*
+    exit 0
+  else
+    exit 1
+  fi
+fi
+
 if ! [[ -d openwrt ]]; then
   echo "INFO: openwrt git repo not yet cloned, first run? cloning now, please wait.."
   git clone https://git.openwrt.org/openwrt/openwrt.git
@@ -69,7 +84,11 @@ echo "INFO: downloading necessary files.."
 make download -j4 
 
 echo "INFO: building release $BUILD_LATEST.."
-make -j8
+if [[ $1 != "start" ]]; then
+  make $*
+else
+  make -j8
+fi
 
 if [[ $? -eq 0 ]]; then
   echo "INFO: build successful! please find image in: $BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
