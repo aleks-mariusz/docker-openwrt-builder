@@ -23,11 +23,12 @@ if ! [[ -d openwrt ]]; then
   git config pull.rebase true
 else
   echo "INFO: cleaning up existing git repo.."
-  make clean
+  make dirclean
 fi
 
 cd openwrt
 echo "INFO: resetting openwrt git repo and updating master branch.."
+git am --abort 2>/dev/null
 git reset --hard origin/master
 git pull
 
