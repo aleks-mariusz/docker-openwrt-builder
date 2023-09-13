@@ -66,6 +66,14 @@ if [[ $? -eq 0 ]]; then
   git am --whitespace=nowarn ../../upstream/$BUILD_LATEST/*.patch
 fi
 
+ls ../../custom/*.diff-patch 2>/dev/null 1>/dev/null
+if [[ $? -eq 0 ]]; then
+  echo "INFO: applying diff-specific patches.."
+  for P in ../../custom/*.diff-patch; do
+    patch -f -p0 < $P
+  done
+fi
+
 echo "INFO: loading release base config.."
 cp ../../upstream/$BUILD_LATEST/config.buildinfo .config
 
