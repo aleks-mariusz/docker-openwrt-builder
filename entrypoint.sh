@@ -8,9 +8,11 @@ if [[ $* ]] && [[ $1 != "start" ]]; then
   make $*
 
   if [[ $? -eq 0 ]]; then
-    echo "INFO: build successful! please find image in: $BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
+    echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
     cd bin/targets/mvebu/cortexa9
+    echo
     ls -l *linksys_wrt32x*sysupgrade*
+    echo
     exit 0
   else
     exit 1
@@ -103,9 +105,11 @@ else
 fi
 
 if [[ $? -eq 0 ]]; then
-  echo "INFO: build successful! please find image in: $BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
+  echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
   cd bin/targets/mvebu/cortexa9
+  echo
   ls -l *linksys_wrt32x*sysupgrade*
+  echo
 else
   exit 1
 fi
