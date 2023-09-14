@@ -6,6 +6,7 @@ if [[ $* ]] && [[ $1 != "start" ]]; then
   echo "INFO: extra params specified, passing them directly to the final step.. "
   cd openwrt
   make $*
+  echo
 
   if [[ $? -eq 0 ]]; then
     echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
@@ -23,49 +24,67 @@ if ! [[ -d openwrt ]]; then
   echo "INFO: openwrt git repo not yet cloned, first run? cloning now, please wait.."
   git clone https://git.openwrt.org/openwrt/openwrt.git
   git config pull.rebase true
+  echo
 else
   echo "INFO: cleaning up existing git repo.."
   make dirclean
+  echo
 fi
 
 cd openwrt
-echo "INFO: resetting openwrt git repo and updating master branch.."
+echo "INFO: rewinding openwrt git repo and updating master branch.."
 git am --abort 2>/dev/null
 git reset --hard origin/master
 git pull
+echo
 
 if ! [[ -n $BUILD_LATEST ]]; then
   cd /home/user/upstream
   BUILD_LATEST=$(ls -1d 2???????-?? | tail -1)
 fi
-echo "INFO: Will build the following release: $BUILD_LATEST"
+echo "INFO: will build the following release: $BUILD_LATEST"
 
 cd /home/user/workdir/openwrt
-
 VERSION_COMMIT=$(awk -F- '{print $NF}' ../../upstream/$BUILD_LATEST/version.buildinfo)
 
-echo "INFO: Resetting git repo to release's commit: $VERSION_COMMIT"
+echo
+echo "INFO: rewinding git repo to release's commit: $VERSION_COMMIT"
 git reset --hard $VERSION_COMMIT
+echo
 
-echo -n "INFO: Resetting feeds to "
-awk '{printf "%s @ %s   ", $2, substr($3,index($3,"^")+1)} END {printf "\n"}' ../../upstream/$BUILD_LATEST/feeds.buildinfo
+echo "INFO: loading feeds commits configuration"
 cp ../../upstream/$BUILD_LATEST/feeds.buildinfo feeds.conf
+echo
 
-#echo "INFO: updating feeds.."
+echo "INFO: updating feeds.."
 ./scripts/feeds update -a -f 2>&1 >/dev/null
+echo
+
+echo -n "INFO: rewinding feeds to "
+awk '{printf "%s @ %s   ", $2, substr($3,index($3,"^")+1)} END {printf "\n"}' ../../upstream/$BUILD_LATEST/feeds.buildinfo
+for D in ./openwrt/ ./feeds/luci/ ./feeds/packages/ ./feeds/routing/ ./feeds/telephony/; do
+  cd "$D"
+  git reset --hard
+  cd "$OLDPWD"
+done
+echo
+
 echo "INFO: installing feeds.."
 ./scripts/feeds install -a -f
+echo
 
 ls ../../upstream/patches/*.patch 2>/dev/null 1>/dev/null
 if [[ $? -eq 0 ]]; then
   echo "INFO: applying non-release specific patches.."
   git am --whitespace=nowarn ../../upstream/patches/*.patch
+  echo
 fi
 
 ls ../../upstream/$BUILD_LATEST/*.patch 2>/dev/null 1>/dev/null
 if [[ $? -eq 0 ]]; then
   echo "INFO: applying release specific patches.."
   git am --whitespace=nowarn ../../upstream/$BUILD_LATEST/*.patch
+  echo
 fi
 
 ls ../../custom/*.diff-patch 2>/dev/null 1>/dev/null
@@ -74,10 +93,12 @@ if [[ $? -eq 0 ]]; then
   for P in ../../custom/*.diff-patch; do
     patch -f -p0 < $P
   done
+  echo
 fi
 
 echo "INFO: loading release base config.."
 cp ../../upstream/$BUILD_LATEST/config.buildinfo .config
+echo
 
 echo "INFO: patching base config.."
 git add -f .config
@@ -87,15 +108,19 @@ if [[ $? -ne 0 ]]; then
   echo "ERROR: custom patches did not apply cleaning.. aborting!"
   exit 1
 fi
+echo
 
 echo "INFO: generating full config.."
 make defconfig
+echo
 
 echo "INFO: downloading necessary files.."
-make download -j4 
+make download -j4
+echo
 
 echo "INFO: copying any custom files to the build tree.."
 rsync -av --delete ../../livefs/ files/
+echo
 
 echo "INFO: building release $BUILD_LATEST.."
 if [[ $1 != "start" ]]; then
@@ -103,6 +128,7 @@ if [[ $1 != "start" ]]; then
 else
   make -j8
 fi
+echo
 
 if [[ $? -eq 0 ]]; then
   echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
