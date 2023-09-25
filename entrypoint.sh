@@ -25,13 +25,9 @@ if ! [[ -d openwrt ]]; then
   git clone https://git.openwrt.org/openwrt/openwrt.git
   git config pull.rebase true
   echo
-else
-  echo "INFO: cleaning up existing git repo.."
-  make dirclean
-  echo
 fi
 
-cd openwrt
+cd /home/user/workdir/openwrt
 echo "INFO: rewinding openwrt git repo and updating master branch.."
 git am --abort 2>/dev/null
 git reset --hard origin/master
@@ -44,12 +40,28 @@ if ! [[ -n $BUILD_LATEST ]]; then
 fi
 echo "INFO: will build the following release: $BUILD_LATEST"
 
-cd /home/user/workdir/openwrt
 VERSION_COMMIT=$(awk -F- '{print $NF}' ../../upstream/$BUILD_LATEST/version.buildinfo)
-
 echo
 echo "INFO: rewinding git repo to release's commit: $VERSION_COMMIT"
 git reset --hard $VERSION_COMMIT
+echo
+
+echo "INFO: loading release base config.."
+cp ../../upstream/$BUILD_LATEST/config.buildinfo .config
+echo
+
+echo "INFO: patching base config.."
+git add -f .config
+git commit -m'stage config file'
+git am --whitespace=nowarn ../../custom/*.patch
+if [[ $? -ne 0 ]]; then
+  echo "ERROR: custom patches did not apply cleaning.. aborting!"
+  exit 1
+fi
+echo
+
+echo "INFO: cleaning up existing git repo.."
+make clean
 echo
 
 echo "INFO: loading feeds commits configuration"
@@ -73,17 +85,17 @@ echo "INFO: installing feeds.."
 ./scripts/feeds install -a -f
 echo
 
-ls ../../upstream/patches/*.patch 2>/dev/null 1>/dev/null
-if [[ $? -eq 0 ]]; then
-  echo "INFO: applying non-release specific patches.."
-  git am --whitespace=nowarn ../../upstream/patches/*.patch
-  echo
-fi
-
 ls ../../upstream/$BUILD_LATEST/*.patch 2>/dev/null 1>/dev/null
 if [[ $? -eq 0 ]]; then
   echo "INFO: applying release specific patches.."
   git am --whitespace=nowarn ../../upstream/$BUILD_LATEST/*.patch
+  echo
+fi
+
+ls ../../upstream/patches/*.patch 2>/dev/null 1>/dev/null
+if [[ $? -eq 0 ]]; then
+  echo "INFO: applying non-release specific patches.."
+  git am --whitespace=nowarn ../../upstream/patches/*.patch
   echo
 fi
 
@@ -96,24 +108,6 @@ if [[ $? -eq 0 ]]; then
   echo
 fi
 
-echo "INFO: loading release base config.."
-cp ../../upstream/$BUILD_LATEST/config.buildinfo .config
-echo
-
-echo "INFO: patching base config.."
-git add -f .config
-git commit -m'stage config file'
-git am --whitespace=nowarn ../../custom/*.patch
-if [[ $? -ne 0 ]]; then
-  echo "ERROR: custom patches did not apply cleaning.. aborting!"
-  exit 1
-fi
-echo
-
-echo "INFO: generating full config.."
-make defconfig
-echo
-
 echo "INFO: downloading necessary files.."
 make download -j4
 echo
@@ -122,15 +116,19 @@ echo "INFO: copying any custom files to the build tree.."
 rsync -av --delete ../../livefs/ files/
 echo
 
+echo "INFO: generating full config.."
+make defconfig
+echo
+
 echo "INFO: building release $BUILD_LATEST.."
 if [[ $1 != "start" ]]; then
   make $*
 else
   make -j8
 fi
-echo
 
 if [[ $? -eq 0 ]]; then
+  echo
   echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
   cd bin/targets/mvebu/cortexa9
   echo
