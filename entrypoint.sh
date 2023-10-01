@@ -6,7 +6,6 @@ if [[ $* ]] && [[ $1 != "start" ]]; then
   echo "INFO: extra params specified, passing them directly to the final step.. "
   cd openwrt
   make $*
-  echo
 
   if [[ $? -eq 0 ]]; then
     echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
@@ -108,12 +107,13 @@ ls ../../custom/*.diff-patch 2>/dev/null 1>/dev/null
 if [[ $? -eq 0 ]]; then
   echo "INFO: applying diff-specific patches.."
   for P in ../../custom/*.diff-patch; do
+    echo "INFO: applying $P.. "
     patch -f -p0 < $P
     if [[ $? -ne 0 ]]; then
       echo "WARN: the patch $P did not apply cleanly.. soldiering on.."
     fi
+    echo
   done
-  echo
 fi
 
 echo "INFO: loading release base config.."
@@ -130,7 +130,7 @@ if [[ $? -ne 0 ]]; then
 fi
 echo
 
-echo "INFO: setting up a default config.."
+echo "INFO: expanding config to full-set of options.."
 make defconfig
 echo
 
