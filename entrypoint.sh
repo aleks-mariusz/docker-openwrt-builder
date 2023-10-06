@@ -66,8 +66,8 @@ echo
 
 echo -n "INFO: rewinding feeds to "
 awk '{printf "%s @ %s   ", $2, substr($3,index($3,"^")+1)} END {printf "\n"}' ../../upstream/$BUILD_LATEST/feeds.buildinfo
-for D in ./openwrt/ ./feeds/luci/ ./feeds/packages/ ./feeds/routing/ ./feeds/telephony/; do
-  cd "$D"
+for D in $(awk '{print $2}' ../../upstream/$BUILD_LATEST/feeds.buildinfo); do
+  cd ./feeds/"$D"
   git reset --hard
   cd "$OLDPWD"
 done
