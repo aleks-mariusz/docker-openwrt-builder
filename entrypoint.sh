@@ -62,6 +62,11 @@ echo
 
 echo "INFO: updating feeds.."
 ./scripts/feeds update -a -f 2>&1 >/dev/null
+if [[ $? -ne 0 ]]; then
+  echo
+  echo "ERROR: was not successful updating feeds, exitting"
+  exit 1
+fi
 echo
 
 echo -n "INFO: rewinding feeds to "
