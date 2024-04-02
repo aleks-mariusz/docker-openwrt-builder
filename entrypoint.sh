@@ -41,14 +41,6 @@ fi
 echo "INFO: planning to build release: $BUILD_LATEST"
 echo
 
-echo "INFO: setting up a default config.."
-make defconfig
-echo
-
-echo "INFO: cleaning up existing git repo.."
-make clean
-echo
-
 VERSION_COMMIT=$(awk -F- '{print $NF}' ../../upstream/$BUILD_LATEST/version.buildinfo)
 echo
 echo "INFO: rewinding git repo to release's commit: $VERSION_COMMIT"
@@ -80,6 +72,14 @@ echo
 
 echo "INFO: installing feeds.."
 ./scripts/feeds install -a -f
+echo
+
+echo "INFO: setting up a default config.."
+make defconfig
+echo
+
+echo "INFO: cleaning up existing git repo.."
+make clean
 echo
 
 ls ../../upstream/$BUILD_LATEST/*.patch 2>/dev/null 1>/dev/null
