@@ -50,6 +50,7 @@ echo
 
 echo "INFO: loading feeds commits configuration"
 cp ../../upstream/$BUILD_LATEST/feeds.buildinfo feeds.conf
+sed -i -E 's;git.openwrt.org/(feed|project);github.com/openwrt;' feeds.conf
 echo
 
 echo "INFO: updating feeds.."
