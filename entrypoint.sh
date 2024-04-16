@@ -131,6 +131,7 @@ git add -f .config
 git commit -m'stage config file'
 git am --whitespace=nowarn ../../custom/*.patch
 if [[ $? -ne 0 ]]; then
+  git am --show-current-patch=diff
   echo "ERROR: custom patches did not apply cleaning.. aborting!"
   exit 1
 fi
