@@ -53,8 +53,8 @@ cp ../../upstream/$BUILD_LATEST/feeds.buildinfo feeds.conf
 sed -i -E 's;git.openwrt.org/(feed|project);github.com/openwrt;' feeds.conf
 echo
 
-echo "INFO: updating feeds.."
-./scripts/feeds update -a -f 2>&1 >/dev/null
+echo "INFO: updating indices of feeds.."
+./scripts/feeds update -i -f 2>&1 >/dev/null
 if [[ $? -ne 0 ]]; then
   echo
   echo "ERROR: was not successful updating feeds, exitting"
