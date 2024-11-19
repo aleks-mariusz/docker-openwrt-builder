@@ -53,8 +53,14 @@ cp ../../upstream/$BUILD_LATEST/feeds.buildinfo feeds.conf
 sed -i -E 's;git.openwrt.org/(feed|project);github.com/openwrt;' feeds.conf
 echo
 
-echo "INFO: updating indices of feeds.."
-./scripts/feeds update -a -f 2>&1 >/dev/null
+# optionally skip fetch when issues are encountered
+if ! [[ -n $FEEDS_SKIP_FETCHING ]]; then
+    echo "INFO: fetching/refreshing feeds and updating indices.."
+    ./scripts/feeds update -a -f 2>&1 >/dev/null
+else
+    echo "INFO: updating indices of (expectedly-already-fetched) feeds.."
+    ./scripts/feeds update -i -f 2>&1 >/dev/null
+fi
 if [[ $? -ne 0 ]]; then
   echo
   echo "ERROR: was not successful updating feeds, exitting"
