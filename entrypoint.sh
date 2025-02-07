@@ -19,9 +19,13 @@ if [[ $* ]] && [[ $1 != "start" ]]; then
   fi
 fi
 
+if ! [[ -n OPENWRT_SRC_TREE ]]; then
+  OPENWRT_SRC_TREE=https://git.openwrt.org/openwrt/openwrt.git
+fi
+
 if ! [[ -d openwrt ]]; then
   echo "INFO: openwrt git repo not yet cloned, first run? cloning now, please wait.."
-  git clone https://git.openwrt.org/openwrt/openwrt.git
+  git clone $OPENWRT_SRC_TREE
   git config pull.rebase true
   echo
 fi
