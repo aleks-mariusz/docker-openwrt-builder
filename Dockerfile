@@ -1,4 +1,4 @@
-FROM alpine:3.19
+FROM alpine:3.21
 
 RUN apk add \
         argp-standalone \
@@ -31,15 +31,17 @@ RUN apk add \
         openssl-dev \
         patch \
         perl \
+        py3-pip \
+        py3-setuptools \
         python3-dev \
         rsync \
         sudo \
+        swig \
         tar \
         unzip \
         util-linux \
         wget \
-        zlib-dev \
-    && ln -s /usr/lib/libncurses.so /usr/lib/libtinfo.so
+        zlib-dev 
 
 RUN addgroup \
         -g 9999 \
