@@ -2,36 +2,27 @@ FROM alpine:3.21
 
 RUN apk add \
         argp-standalone \
-        asciidoc \
         bash \
-        bc \
-        binutils \
         bzip2 \
-        cdrkit \
         coreutils \
         curl \
         diffutils \
         findutils \
-        flex \
-        fts-dev \
+        file \
         g++ \
         gawk \
         gcc \
-        gettext \
         git \
         grep \
         gzip \
-        intltool \
-        libxslt \
-        linux-headers \
         make \
+        linux-headers \
+        musl-fts-dev \
         musl-libintl \
         musl-obstack-dev \
         ncurses-dev \
-        openssl-dev \
         patch \
         perl \
-        py3-pip \
         py3-setuptools \
         python3-dev \
         rsync \
@@ -39,9 +30,9 @@ RUN apk add \
         swig \
         tar \
         unzip \
-        util-linux \
         wget \
-        zlib-dev 
+        zlib-dev \
+        zstd
 
 RUN addgroup \
         -g 9999 \
