@@ -1,30 +1,38 @@
 #!/usr/bin/env bash
 
+DEFAULT_OPENWRT_SRC_TREE='https://git.openwrt.org/openwrt/openwrt.git'
+
 cd /home/user/workdir
 
-if [[ $* ]] && [[ $1 != "start" ]]; then
-  echo "INFO: extra params specified, passing them directly to the final step.. "
-  cd openwrt
-  make $*
+if [[ $* ]]; then
+  if [[ $1 = "shell" ]]; then
+    exec sh
+  elif [[ $1 != "start" ]]; then
+    echo "INFO: extra params specified, passing them directly to the final step.. "
+    cd openwrt
+    make $*
 
-  if [[ $? -eq 0 ]]; then
-    echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
-    cd bin/targets/mvebu/cortexa9
-    echo
-    ls -l *linksys_wrt32x*sysupgrade*
-    echo
-    exit 0
-  else
-    exit 1
+    if [[ $? -eq 0 ]]; then
+      echo
+      echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/.../targets/*/*"
+      cd $(find bin -type d -name targets -print0 | xargs -0 -I {} stat -c "%Y %n" "{}" | sort -n | cut -d' ' -f2-|tail -1)
+      echo
+      ls -l */*/*sysupgrade.bin
+      echo
+    else
+      exit 1
+    fi
   fi
-fi
-
-if ! [[ -n OPENWRT_SRC_TREE ]]; then
-  OPENWRT_SRC_TREE=https://git.openwrt.org/openwrt/openwrt.git
 fi
 
 if ! [[ -d openwrt ]]; then
   echo "INFO: openwrt git repo not yet cloned, first run? cloning now, please wait.."
+
+  if [[ -z $OPENWRT_SRC_TREE ]]; then
+    OPENWRT_SRC_TREE=$DEFAULT_OPENWRT_SRC_TREE
+    echo "WARN: no upstream openwrt src dir provided, defaulting to '$OPENWRT_SRC_TREE'"
+  fi
+
   git clone $OPENWRT_SRC_TREE
   git config pull.rebase true
   echo
@@ -33,19 +41,25 @@ fi
 cd /home/user/workdir/openwrt
 echo "INFO: rewinding openwrt git repo and updating master branch.."
 git am --abort 2>/dev/null
-git reset --hard origin/master
+git reset --hard origin/main
 git pull
 echo
 
-if ! [[ -n $BUILD_LATEST ]]; then
+if [[ -z $BASE_BUILD_LATEST ]]; then
+  cd /home/user/upstream-base || cd /home/user/upstream
+  BASE_BUILD_LATEST=$(ls -1d 20* | tail -1)
+  cd $OLDPWD
+fi
+
+if [[ -z $BUILD_LATEST ]]; then
   cd /home/user/upstream
-  BUILD_LATEST=$(ls -1d 2???????-?? | tail -1)
+  BUILD_LATEST=$(ls -1d 20* | tail -1)
   cd $OLDPWD
 fi
 echo "INFO: planning to build release: $BUILD_LATEST"
 echo
 
-VERSION_COMMIT=$(awk -F- '{print $NF}' ../../upstream/$BUILD_LATEST/version.buildinfo)
+VERSION_COMMIT=$(awk -F- '{print $NF}' $(find ../../upstream/$BUILD_LATEST -type f -name version.buildinfo))
 echo
 echo "INFO: rewinding git repo to release's commit: $VERSION_COMMIT"
 git am --abort 2>/dev/null
@@ -53,12 +67,12 @@ git reset --hard $VERSION_COMMIT
 echo
 
 echo "INFO: loading feeds commits configuration"
-cp ../../upstream/$BUILD_LATEST/feeds.buildinfo feeds.conf
+cp $(find ../../upstream/$BUILD_LATEST -type f -name feeds.buildinfo) feeds.conf
 sed -i -E 's;git.openwrt.org/(feed|project);github.com/openwrt;' feeds.conf
 echo
 
 # optionally skip fetch when issues are encountered
-if ! [[ -n $FEEDS_SKIP_FETCHING ]]; then
+if [[ -z $FEEDS_SKIP_FETCHING ]]; then
     echo "INFO: fetching/refreshing feeds and updating indices.."
     ./scripts/feeds update -a -f 2>&1 >/dev/null
 else
@@ -73,9 +87,10 @@ fi
 echo
 
 echo -n "INFO: rewinding feeds to "
-awk '{printf "%s @ %s   ", $2, substr($3,index($3,"^")+1)} END {printf "\n"}' ../../upstream/$BUILD_LATEST/feeds.buildinfo
-for D in $(awk '{print $2}' ../../upstream/$BUILD_LATEST/feeds.buildinfo); do
+awk '{printf "%s @ %s   ", $2, substr($3,index($3,"^")+1)} END {printf "\n"}' $(find ../../upstream/$BUILD_LATEST -type f -name feeds.buildinfo)
+for D in $(awk '{print $2}' $(find ../../upstream/$BUILD_LATEST -type f -name feeds.buildinfo)); do
   cd ./feeds/"$D"
+  echo -n "$D "
   git reset --hard
   cd "$OLDPWD"
 done
@@ -91,12 +106,18 @@ echo
 
 echo "INFO: cleaning up existing git repo.."
 make clean
+rm -fr bin
 echo
 
-ls ../../upstream/$BUILD_LATEST/*.patch 2>/dev/null 1>/dev/null
+UPSTREAM_DIR=../../upstream
+if [[ -d ../../upstream-base ]]; then
+  UPSTREAM_DIR=../../upstream-base
+fi
+
+ls $UPSTREAM_DIR/$BASE_BUILD_LATEST/*.patch 2>/dev/null 1>/dev/null
 if [[ $? -eq 0 ]]; then
   echo "INFO: applying release specific patches.."
-  for P in ../../upstream/$BUILD_LATEST/*.patch; do 
+  for P in $UPSTREAM_DIR/$BASE_BUILD_LATEST/*.patch; do
     git am --whitespace=nowarn $P
     if [[ $? -ne 0 ]]; then
       echo "WARN: the patch $P did not apply cleanly.. soldiering on.."
@@ -106,10 +127,10 @@ if [[ $? -eq 0 ]]; then
   echo
 fi
 
-ls ../../upstream/patches/*.patch 2>/dev/null 1>/dev/null
+ls $UPSTREAM_DIR/patches/*.patch 2>/dev/null 1>/dev/null
 if [[ $? -eq 0 ]]; then
   echo "INFO: applying non-release specific patches.."
-  for P in ../../upstream/patches/*.patch; do
+  for P in $UPSTREAM_DIR/patches/*.patch; do
     git am --whitespace=nowarn $P
     if [[ $? -ne 0 ]]; then
       echo "WARN: the patch $P did not apply cleanly.. soldiering on.."
@@ -124,7 +145,7 @@ if [[ $? -eq 0 ]]; then
   echo "INFO: applying diff-specific patches.."
   for P in ../../custom/*.diff-patch; do
     echo "INFO: applying $P.. "
-    patch -f -p0 < $P
+    patch -p0 -r /dev/null -V none -N < $P
     if [[ $? -ne 0 ]]; then
       echo "WARN: the patch $P did not apply cleanly.. soldiering on.."
     fi
@@ -133,7 +154,7 @@ if [[ $? -eq 0 ]]; then
 fi
 
 echo "INFO: loading release base config.."
-cp ../../upstream/$BUILD_LATEST/config.buildinfo .config
+cp $UPSTREAM_DIR/$BASE_BUILD_LATEST/config.buildinfo .config
 echo
 
 echo "INFO: patching base config.."
@@ -163,15 +184,15 @@ echo "INFO: building release $BUILD_LATEST.."
 if [[ $1 != "start" ]]; then
   make $*
 else
-  make -j8
+  make -j$(nproc)
 fi
 
 if [[ $? -eq 0 ]]; then
   echo
-  echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/targets/mvebu/cortexa9"
-  cd bin/targets/mvebu/cortexa9
+  echo "INFO: build successful! please find image in: \$BUILD_WORKDIR/openwrt/bin/.../targets/*/*"
+  cd $(find bin -type d -name targets -print0 | xargs -0 -I {} stat -c "%Y %n" "{}" | sort -n | cut -d' ' -f2-|tail -1)
   echo
-  ls -l *linksys_wrt32x*sysupgrade*
+  ls -l */*/*sysupgrade.bin
   echo
 else
   exit 1
